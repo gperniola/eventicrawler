@@ -20,10 +20,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.Locale;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -53,38 +50,61 @@ public class PrevisioniExtractor {
 		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd", Locale.ENGLISH);
 		String query = "SELECT * from eventi WHERE data_a >= '" + formatter.format(date)
 				+ "' AND  data_da <= '" + formatter.format(date) + "' ";
-		System.out.println(query);
+		//System.out.println(query);
 		Statement st0 = connDb.createStatement();
 		ResultSet rs0 = st0.executeQuery(query);
-		
-		
-		String updateOld = "DELETE FROM previsioni WHERE true";
+
+
+		//DEBUG_CODE -------------------------
+		String queryCount = "SELECT COUNT(*) from eventi where data_a >= '" + formatter.format(date)
+				+ "' AND  data_da <= '" + formatter.format(date) + "' ";
+		Statement stCount = connDb.createStatement();
+		ResultSet rsCount = stCount.executeQuery(queryCount);
+		rsCount.next();
+		System.out.println("PrevisioniExtractor.java: extracting weather predictions for " + rsCount.getString(1) +" events ...");
+		int callsCount = 0;
+		int eventsProcessed = 0;
+		int errorsFound = 0;
+		int istatErrorsFound = 0;
+		//-----------------------------------------
+
+
+		String updateOld = "DELETE FROM previsioni_eventi WHERE true";
 		Statement st = connDb.createStatement();
+		st.execute(updateOld);
+		updateOld = "DELETE FROM previsioni_comuni WHERE true";
+		st = connDb.createStatement();
 		st.execute(updateOld);
 		
 
 		// Check meteo passato
 
 		while (rs0.next()) {
-			
+			error = false;
 			
 			String link = rs0.getString("link");
-			
-
 			Date da = rs0.getDate("data_da");
 			Date a = rs0.getDate("data_a");
-
 			Calendar start = Calendar.getInstance();
 			Calendar start2 = Calendar.getInstance();
 			Calendar end = Calendar.getInstance();
 			end.setTime(a);
-
 			String comune = rs0.getString("comune");
+
+			//METEO_CODE
+			String idComune = getIstatDb(comune,connDb);
+			if (idComune == null){istatErrorsFound++;}
+			//--------------
+
 			ArrayList<Date> dateev = new ArrayList();
 			String linkMeteo = "https://www.tempoitalia.it/meteo/" + comune.replace(" ", "-").replace("'", "-");
 			
 			if (DateUtils.isSameDay(start, end)) {
-				dateev.add(a);				
+				//METEO_CODE controllo se ho già ho una previsione per la città/data dell'evento
+				int idPrevisioni = checkPrevisioniDb(idComune, new java.sql.Date(a.getTime()), connDb);
+				if(idPrevisioni == -1 && idComune != null) dateev.add(a); //se non ho una previsione, inserisci la data in array
+				if (idPrevisioni != -1) AddPrevisioneEvento(link,rs0.getString("titolo"),new java.sql.Date(a.getTime()),rs0.getInt("autoid"),idPrevisioni,connDb);
+				//---------------------------------------
 			} else {
 				Calendar start7p = start;
 				start7p.add(Calendar.DATE,7);
@@ -92,21 +112,63 @@ public class PrevisioniExtractor {
 				Date endD = (Date) minDate(start7p.getTime(),end.getTime());
 				Calendar d = Calendar.getInstance();
 				d.setTime(endD);
-				
 				for (Date dat = start2.getTime(); start2.before(d); start2.add(Calendar.DATE,1), dat = start2.getTime()) {
-					dateev.add(dat);
+					//METEO_CODE controllo se ho già ho una previsione per la città/data dell'evento
+					int idPrevisioni = checkPrevisioniDb(idComune, new java.sql.Date(dat.getTime()), connDb);
+					if(idPrevisioni == -1 && idComune != null){
+						dateev.add(dat); //se non ho una previsione, inserisci la data in array
+					}
+					if (idPrevisioni != -1){
+						AddPrevisioneEvento(link,rs0.getString("titolo"),new java.sql.Date(dat.getTime()),rs0.getInt("autoid"),idPrevisioni,connDb);
+					}
+					//--------------------------------------------
 				}
 			}
-			getMeteoData(linkMeteo, link, rs0.getString("titolo"), dateev, connDb);
-			
-			String up = "UPDATE eventi SET previsioni_bool = 1 where link = ?";
-	    	PreparedStatement st3 = connDb.prepareStatement(up);
-	    	st3.setString(1, link);
-	    	st3.execute();
+
+			if(!dateev.isEmpty()) {
+				getMeteoData(linkMeteo, idComune, comune, dateev, connDb);
+				callsCount++;
+				for(int i = 0; i < dateev.size(); i++) {
+					Date dat = dateev.get(i);
+					int idPrevisioni = checkPrevisioniDb(idComune, new java.sql.Date(dat.getTime()), connDb);
+					if (idPrevisioni != -1){
+						AddPrevisioneEvento(link,rs0.getString("titolo"), new java.sql.Date(dat.getTime()),rs0.getInt("autoid"),idPrevisioni,connDb);
+					}
+				}
+				Thread.sleep(1000);
+			}
+
+
+			if(error!= true) {
+				String up = "UPDATE eventi SET previsioni_bool = 1 where link = ?";
+				PreparedStatement st3 = connDb.prepareStatement(up);
+				st3.setString(1, link);
+				st3.execute();
+			} if(error== true) {
+				String up = "UPDATE eventi SET previsioni_bool = -1 where link = ?";
+				PreparedStatement st3 = connDb.prepareStatement(up);
+				st3.setString(1, link);
+				st3.execute();
+				errorsFound++;
+			}
+
+			//DEBUG_CODE
+			eventsProcessed++;
+			if((eventsProcessed % 100) == 0) {
+				System.out.println("Processed events: " + eventsProcessed + " ...");
+				System.out.println("Number of weather calls made: " + callsCount + " ...");
+			}
+			//-----------------
 			 
-			Thread.sleep(5000);
+			//Thread.sleep(5000);
 		}
 		connDb.close();
+		//DEBUG_CODE
+		System.out.println("TOTAL number of events processed: " + eventsProcessed);
+		System.out.println("TOTAL number of weather calls: " + callsCount);
+		System.out.println("TOTAL number of weather errors detected: " + errorsFound);
+		System.out.println("TOTAL number of istat code errors detected: " + istatErrorsFound);
+		//---------------------
 	}
 
 		public static Comparable minDate(Comparable c1, Comparable c2) {
@@ -117,10 +179,10 @@ public class PrevisioniExtractor {
 		}
 
 		
-	public static void getMeteoData(String linkMeteo, String linkEvento, String titolo, ArrayList<Date> dateev, Connection connDb) throws Exception  {
+	public static void getMeteoData(String linkMeteo, String idComune, String comune, ArrayList<Date> dateev, Connection connDb) throws Exception  {
 			 try {
 				 URL url = new URL(linkMeteo);
-					System.out.println(linkMeteo);
+					//System.out.println(linkMeteo);
 				 URLConnection conn = url.openConnection();
 				 conn.setRequestProperty("User-Agent","Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36");
 				 conn.setRequestProperty("Accept","text/html");
@@ -203,8 +265,7 @@ public class PrevisioniExtractor {
 			     Date dat = dateev.get(i);
 			     int giorno = dat.getDate();
 			     int index = giorni.indexOf(giorno);
-			        
-			     
+
 			     int primavera = 0;
 			     int estate = 0;
 			     int autunno = 0;
@@ -233,19 +294,17 @@ public class PrevisioniExtractor {
 				}
 			     
 				//Inserisci nel db
-		    	 String check = "SELECT * from previsioni where link =? AND titolo = ? AND dataevento = ?";
+		    	 String check = "SELECT * from previsioni_comuni where idcomune = ? AND data = ?";
 		    	 PreparedStatement st1 = connDb.prepareStatement(check);
-		    	 st1.setString(1, linkEvento);
-		    	 st1.setString(2, titolo);
-		    	 st1.setDate(3, new java.sql.Date(dat.getTime()));
+		    	 st1.setString(1, idComune);
+		    	 st1.setDate(2, new java.sql.Date(dat.getTime()));
 		    	 ResultSet rs = st1.executeQuery();
 		    	
 		    	 if(!rs.next()){
-				     System.out.println(linkMeteo+" "+giorni.get(index));
-		    		 String q = "INSERT INTO previsioni(link,titolo,dataevento,primavera,estate,autunno,inverno,sereno,coperto,poco_nuvoloso,pioggia,temporale,nebbia,neve,temperatura,velocita_vento) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+		    		 String q = "INSERT INTO previsioni_comuni(idcomune,comune,data,primavera,estate,autunno,inverno,sereno,coperto,poco_nuvoloso,pioggia,temporale,nebbia,neve,temperatura,velocita_vento) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 		    		 PreparedStatement st2 = connDb.prepareStatement(q);
-			    	 st2.setString(1, linkEvento);
-			    	 st2.setString(2, titolo);
+			    	 st2.setString(1, idComune);
+			    	 st2.setString(2, comune);
 			    	 st2.setDate(3, new java.sql.Date(dat.getTime()));
 			    	 st2.setInt(4, primavera);
 			    	 st2.setInt(5, estate);
@@ -266,10 +325,82 @@ public class PrevisioniExtractor {
 			     }
 			 }catch(Exception e) {error = true; e.printStackTrace();}
 		}
-		
+
+
+
 		public static String getMonth(int month) {
 		    return new DateFormatSymbols(Locale.ITALIAN).getMonths()[month];
 		}
+
+
+
+	//Controlla che il comune abbia un codice istat
+	public static String getIstatDb(String comune, Connection connDb) throws NoSuchElementException,Exception {
+		String istatComuneFound = null;
+
+		try {
+
+			//Controlla codice istat partendo da nome comune
+			String checkIstat = "SELECT istat from comuni where comune = ?";
+			PreparedStatement statement = connDb.prepareStatement(checkIstat);
+			statement.setString(1, comune);
+			ResultSet rs = statement.executeQuery();
+
+			if (!rs.next()) {
+				throw new NoSuchElementException();
+			} else {
+				istatComuneFound = rs.getString("istat");
+			}
+		}catch(NoSuchElementException e){error = true; System.out.println("NoSuchElementException: Istat code of " + comune + " not found");}
+		catch(Exception e) {error = true; e.printStackTrace();}
+
+		return istatComuneFound;
+	}
+
+
+
+	//Controlla se il meteo per la città e data selezionata sia già stato estratto
+	//se non è stato ancora estratto, restituisce -1, altrimenti restituisce l'id del meteo trovato.
+	public static int checkPrevisioniDb(String idComune, Date data, Connection connDb) throws Exception{
+		int idPrevisioniFound = -1;
+		try {
+			//Controlla se è presente gia' il meteo per comune e data selezionata
+			String checkMeteo = "SELECT autoid from previsioni_comuni where idcomune = ? AND data = ?";
+			PreparedStatement statement2 = connDb.prepareStatement(checkMeteo);
+			statement2.setString(1, idComune);
+			statement2.setDate(2, new java.sql.Date(data.getTime()));
+			ResultSet rs2 = statement2.executeQuery();
+
+			if(rs2.next()){idPrevisioniFound = rs2.getInt("autoid");}
+
+		}catch(Exception e) {error = true; e.printStackTrace();}
+		return idPrevisioniFound;
+	}
+
+
+	//Aggiunge l'id del meteo per l'evento selezionato nella tabella meteo_eventi
+	public static void AddPrevisioneEvento(String link, String titolo,  Date data, int idEvento, int idPrevisione, Connection connDb) throws Exception{
+		try{
+			//Inserisci il meteo per l'evento nella tabella meteo_eventi
+			String check = "SELECT * from previsioni_eventi where link =? AND titolo = ? AND dataevento = ?";
+			PreparedStatement st1 = connDb.prepareStatement(check);
+			st1.setString(1, link);
+			st1.setString(2, titolo);
+			st1.setDate(3, new java.sql.Date(data.getTime()));
+			ResultSet rs = st1.executeQuery();
+
+			if(!rs.next()) {
+				String insert = "INSERT INTO previsioni_eventi(link,titolo,dataevento,idevento,idprevisione) VALUES (?,?,?,?,?)";
+				PreparedStatement st2 = connDb.prepareStatement(insert);
+				st2.setString(1, link);
+				st2.setString(2, titolo);
+				st2.setDate(3, new java.sql.Date(data.getTime()));
+				st2.setInt(4, idEvento);
+				st2.setInt(5, idPrevisione);
+				st2.execute();
+			}
+		}catch(Exception e) {error = true; e.printStackTrace();}
+	}
 		
 		
 
