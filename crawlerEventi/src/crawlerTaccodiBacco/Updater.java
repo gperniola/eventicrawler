@@ -43,7 +43,7 @@ public class Updater {
 
 		Core.eventsTow2v();
 		MeteoExtractor.extractPastMeteoData();//<- Sistemare i duplicati e cercare una nuova fonte. ???
-		//PrevisioniExtractor.extract7days();
+		PrevisioniExtractor.extract7days();
 		//Converter.eventiTovec();
 
         //DEBUG_CODE
