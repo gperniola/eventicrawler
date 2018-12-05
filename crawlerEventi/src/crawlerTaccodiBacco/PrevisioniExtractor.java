@@ -107,12 +107,12 @@ public class PrevisioniExtractor {
 				//---------------------------------------
 			} else {
 				Calendar start7p = start;
-				start7p.add(Calendar.DATE,7);
+				start7p.add(Calendar.DATE,6);
 				//Se fine evento e oggi sono diversi (non è singola data nè ultimo giorno) è nel centro. Previsioni per max 7 giorni, quindi si sceglie il min fra oggi+7 e fine evento
 				Date endD = (Date) minDate(start7p.getTime(),end.getTime());
 				Calendar d = Calendar.getInstance();
 				d.setTime(endD);
-				for (Date dat = start2.getTime(); start2.before(d); start2.add(Calendar.DATE,1), dat = start2.getTime()) {
+				for (Date dat = start2.getTime(); start2.before(d) || DateUtils.isSameDay(start2, d); start2.add(Calendar.DATE,1), dat = start2.getTime()) {
 					//METEO_CODE controllo se ho già ho una previsione per la città/data dell'evento
 					int idPrevisioni = checkPrevisioniDb(idComune, new java.sql.Date(dat.getTime()), connDb);
 					if(idPrevisioni == -1 && idComune != null){
