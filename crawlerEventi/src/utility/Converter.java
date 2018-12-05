@@ -122,8 +122,14 @@ public class Converter {
 				 num_days++;
 			}
 			
-			String meteo = "select bit_or(sereno) as ser, bit_or(coperto) as cop, bit_or(poco_nuvoloso) as nuv, bit_or(pioggia) as piog, bit_or(temporale) as temp, bit_or(neve) as nev,  bit_or(nebbia) as neb, avg(temperatura) as tem, avg(velocita_vento) as ven FROM \n" + 
-					"((SELECT link,sereno,coperto,poco_nuvoloso,pioggia,temporale,neve,nebbia,temperatura,velocita_vento FROM meteo where link = '"+link+"') UNION (SELECT link,sereno,coperto,poco_nuvoloso,pioggia,temporale,neve,nebbia,temperatura,velocita_vento FROM previsioni where link = '"+link+"') ) as metprev";
+			//String meteo = "select bit_or(sereno) as ser, bit_or(coperto) as cop, bit_or(poco_nuvoloso) as nuv, bit_or(pioggia) as piog, bit_or(temporale) as temp, bit_or(neve) as nev,  bit_or(nebbia) as neb, avg(temperatura) as tem, avg(velocita_vento) as ven FROM \n" +
+			//		"((SELECT link,sereno,coperto,poco_nuvoloso,pioggia,temporale,neve,nebbia,temperatura,velocita_vento FROM meteo where link = '"+link+"') UNION (SELECT link,sereno,coperto,poco_nuvoloso,pioggia,temporale,neve,nebbia,temperatura,velocita_vento FROM previsioni where link = '"+link+"') ) as metprev";
+
+			String meteo ="SELECT bit_or(sereno) as ser, bit_or(coperto) as cop, bit_or(poco_nuvoloso) as nuv, bit_or(pioggia) as piog, bit_or(temporale) as temp, bit_or(neve) as nev,  bit_or(nebbia) as neb, avg(temperatura) as tem, avg(velocita_vento) as ven FROM\n" +
+					"  ((SELECT link,sereno,coperto,poco_nuvoloso,pioggia,temporale,neve,nebbia,temperatura,velocita_vento FROM meteo_eventi INNER JOIN meteo_comuni ON meteo_eventi.idmeteo = meteo_comuni.autoid where link = '\"+link+\"') UNION\n" +
+					"   (SELECT link,sereno,coperto,poco_nuvoloso,pioggia,temporale,neve,nebbia,temperatura,velocita_vento FROM previsioni_eventi INNER JOIN previsioni_comuni ON previsioni_eventi.idprevisione = previsioni_comuni.autoid where link = '\"+link+\"') ) as metprev;";
+
+
 			Statement s = con0.createStatement();
 			ResultSet rss = s.executeQuery(meteo);
 			rss.next();
