@@ -98,32 +98,25 @@ public class PrevisioniExtractor {
 
 			ArrayList<Date> dateev = new ArrayList();
 			String linkMeteo = "https://www.tempoitalia.it/meteo/" + comune.replace(" ", "-").replace("'", "-");
-			
-			if (DateUtils.isSameDay(start, end)) {
-				//METEO_CODE controllo se ho già ho una previsione per la città/data dell'evento
-				int idPrevisioni = checkPrevisioniDb(idComune, new java.sql.Date(a.getTime()), connDb);
-				if(idPrevisioni == -1 && idComune != null) dateev.add(a); //se non ho una previsione, inserisci la data in array
-				if (idPrevisioni != -1) AddPrevisioneEvento(link,rs0.getString("titolo"),new java.sql.Date(a.getTime()),rs0.getInt("autoid"),idPrevisioni,connDb);
-				//---------------------------------------
-			} else {
-				Calendar start7p = start;
-				start7p.add(Calendar.DATE,6);
-				//Se fine evento e oggi sono diversi (non è singola data nè ultimo giorno) è nel centro. Previsioni per max 7 giorni, quindi si sceglie il min fra oggi+7 e fine evento
-				Date endD = (Date) minDate(start7p.getTime(),end.getTime());
-				Calendar d = Calendar.getInstance();
-				d.setTime(endD);
-				for (Date dat = start2.getTime(); start2.before(d) || DateUtils.isSameDay(start2, d); start2.add(Calendar.DATE,1), dat = start2.getTime()) {
-					//METEO_CODE controllo se ho già ho una previsione per la città/data dell'evento
-					int idPrevisioni = checkPrevisioniDb(idComune, new java.sql.Date(dat.getTime()), connDb);
-					if(idPrevisioni == -1 && idComune != null){
-						dateev.add(dat); //se non ho una previsione, inserisci la data in array
-					}
-					if (idPrevisioni != -1){
-						AddPrevisioneEvento(link,rs0.getString("titolo"),new java.sql.Date(dat.getTime()),rs0.getInt("autoid"),idPrevisioni,connDb);
-					}
-					//--------------------------------------------
-				}
-			}
+
+			Calendar start7p = start;
+			start7p.add(Calendar.DATE,6);
+			//Se fine evento e oggi sono diversi (non è singola data nè ultimo giorno) è nel centro. Previsioni per max 7 giorni, quindi si sceglie il min fra oggi+7 e fine evento
+            Date endD = (Date) minDate(start7p.getTime(),end.getTime());
+            Calendar d = Calendar.getInstance();
+            d.setTime(endD);
+
+            for (Date dat = start2.getTime(); start2.before(d) || DateUtils.isSameDay(start2, d); start2.add(Calendar.DATE,1), dat = start2.getTime()) {
+                //METEO_CODE controllo se ho già ho una previsione per la città/data dell'evento
+                int idPrevisioni = checkPrevisioniDb(idComune, new java.sql.Date(dat.getTime()), connDb);
+                if(idPrevisioni == -1 && idComune != null){
+                    dateev.add(dat); //se non ho una previsione, inserisci la data in array
+                }
+                if (idPrevisioni != -1){
+                    AddPrevisioneEvento(link,rs0.getString("titolo"),new java.sql.Date(dat.getTime()),rs0.getInt("autoid"),idPrevisioni,connDb);
+                }
+                //--------------------------------------------
+            }
 
 			if(!dateev.isEmpty()) {
 				getMeteoData(linkMeteo, idComune, comune, dateev, connDb);
