@@ -27,6 +27,7 @@ import java.util.NoSuchElementException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.commons.lang.time.DateUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -94,55 +95,37 @@ public class MeteoExtractor {
 			 if (idComune == null){istatErrorsFound++;}
 			 //--------------
 
-			 if(start.equals(end)) {
-				 String mese = getMonth(a.getMonth());
-				 String iniziale = mese.substring(0, 1);
-				 String finale = mese.substring(1, mese.length());
-				 String nomeMese = iniziale.toUpperCase() + finale.toLowerCase();
+			for (Date dat = start.getTime(); start.before(end) || DateUtils.isSameDay(start, end); start.add(Calendar.DATE, 1), dat = start.getTime()) {
+				String mese = getMonth(dat.getMonth());
+				String iniziale = mese.substring(0, 1);
+				String finale = mese.substring(1, mese.length());
+				String nomeMese = iniziale.toUpperCase() + finale.toLowerCase();
 
-				 //METEO_CODE
-				 int idMeteo = checkMeteoDb(idComune, a, connDb);
-				 if (idMeteo == -1 && idComune != null){
-                     String linkMeteo = "https://www.ilmeteo.it/portale/archivio-meteo/" + URLEncoder.encode(comune) + "/" + (a.getYear() + 1900) + "/" + nomeMese + "/" + a.getDate();
-                     getMeteoData(linkMeteo,idComune, comune, a, connDb);
-                     idMeteo = checkMeteoDb(idComune, a, connDb);
-                     callsCount++;
-                     Thread.sleep(1000);
-                 }
-				 //Aggiungi riga in meteo_eventi solo se non ci sono errori
-                 if (idMeteo != -1){AddMeteoEvento(link,rs0.getString("titolo"),a,rs0.getInt("autoid"),idMeteo,connDb);}
-			 }else {
-				 for (Date dat = start.getTime(); start.before(end); start.add(Calendar.DATE, 1), dat = start.getTime()) {
-					 String mese = getMonth(dat.getMonth());
-					 String iniziale = mese.substring(0, 1);
-					 String finale = mese.substring(1, mese.length());
-					 String nomeMese = iniziale.toUpperCase() + finale.toLowerCase();
-
-					 //METEO_CODE
-                     int idMeteo = checkMeteoDb(idComune, dat, connDb);
-                     if (idMeteo == -1){
-                         String linkMeteo = "https://www.ilmeteo.it/portale/archivio-meteo/" + URLEncoder.encode(comune) + "/" + (dat.getYear() + 1900) + "/" + nomeMese + "/" + dat.getDate();
-                         getMeteoData(linkMeteo,idComune, comune, dat, connDb);
-                         idMeteo = checkMeteoDb(idComune, dat, connDb);
-                         callsCount++;
-                         Thread.sleep(1000);
-                     }
-                     //Aggiungi riga in meteo_eventi solo se non ci sono errori
-                     if (idMeteo != -1){AddMeteoEvento(link,rs0.getString("titolo"),dat,rs0.getInt("autoid"),idMeteo,connDb);}
-				 }
-			 }
-			 if(error!= true) {
-				 String up = "UPDATE eventi SET meteo_bool = 1 where link = ?";
-	    		 PreparedStatement st3 = connDb.prepareStatement(up);
-	    		 st3.setString(1, link);
-	    		 st3.execute();
-			 } if(error== true) {
-				 String up = "UPDATE eventi SET meteo_bool = -1 where link = ?";
-	    		 PreparedStatement st3 = connDb.prepareStatement(up);
-	    		 st3.setString(1, link);
-	    		 st3.execute();
-	    		 errorsFound++;
-			 }
+				//METEO_CODE
+				int idMeteo = checkMeteoDb(idComune, dat, connDb);
+				if (idMeteo == -1){
+					String linkMeteo = "https://www.ilmeteo.it/portale/archivio-meteo/" + URLEncoder.encode(comune) + "/" + (dat.getYear() + 1900) + "/" + nomeMese + "/" + dat.getDate();
+					getMeteoData(linkMeteo,idComune, comune, dat, connDb);
+					idMeteo = checkMeteoDb(idComune, dat, connDb);
+					callsCount++;
+					Thread.sleep(1000);
+				}
+				//Aggiungi riga in meteo_eventi solo se non ci sono errori
+				if (idMeteo != -1){AddMeteoEvento(link,rs0.getString("titolo"),dat,rs0.getInt("autoid"),idMeteo,connDb);}
+			}
+			if(error!= true) {
+				String up = "UPDATE eventi SET meteo_bool = 1 where link = ?";
+				PreparedStatement st3 = connDb.prepareStatement(up);
+				st3.setString(1, link);
+				st3.execute();
+			}
+			if(error== true) {
+				String up = "UPDATE eventi SET meteo_bool = -1 where link = ?";
+				PreparedStatement st3 = connDb.prepareStatement(up);
+				st3.setString(1, link);
+				st3.execute();
+				errorsFound++;
+			}
 
 			//DEBUG_CODE
             eventsProcessed++;
@@ -167,7 +150,7 @@ public class MeteoExtractor {
     public static void getMeteoData(String linkMeteo,String idComune, String comune, Date dataevento, Connection connDb) throws Exception  {
 		 try {
 			 URL url = new URL(linkMeteo);
-				//System.out.println(linkMeteo);
+			 //System.out.println(linkMeteo);
 			 URLConnection conn = url.openConnection();
 			 conn.setRequestProperty("User-Agent","Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36");
 			 conn.setRequestProperty("Accept","text/html");
