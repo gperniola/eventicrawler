@@ -17,6 +17,7 @@ create table meteo_comuni
   neve           smallint,
   temperatura    numeric,
   velocita_vento numeric,
+  dati_presenti  integer default 1,
   constraint meteo_comuni_pk
     primary key (autoid),
   constraint meteo_comuni_comuni_istat_fk
