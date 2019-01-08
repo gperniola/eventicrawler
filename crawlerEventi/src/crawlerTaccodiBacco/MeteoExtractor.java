@@ -149,15 +149,7 @@ public class MeteoExtractor {
 	//public static void getMeteoData(String linkMeteo, String linkEvento, String titolo, Date dataevento, Connection connDb) throws Exception  {
     public static void getMeteoData(String linkMeteo,String idComune, String comune, Date dataevento, Connection connDb) throws Exception  {
 		 try {
-			 URL url = new URL(linkMeteo);
-			 //System.out.println(linkMeteo);
-			 URLConnection conn = url.openConnection();
-			 conn.setRequestProperty("User-Agent","Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36");
-			 conn.setRequestProperty("Accept","text/html");
-			 conn.setRequestProperty("Connection","keep-alive");
-			 conn.setConnectTimeout(3000);
-	
-			 conn.connect();
+
 
              String inputLine;
              String html ="";
@@ -167,6 +159,15 @@ public class MeteoExtractor {
              int maxTries = 5;
              while(true) {
                  try {
+                     URL url = new URL(linkMeteo);
+                     //System.out.println(linkMeteo);
+                     URLConnection conn = url.openConnection();
+                     conn.setRequestProperty("User-Agent","Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36");
+                     conn.setRequestProperty("Accept","text/html");
+                     conn.setRequestProperty("Connection","keep-alive");
+                     conn.setConnectTimeout(3000);
+
+                     conn.connect();
                      InputStream stream = conn.getInputStream();
                      InputStreamReader reader = new InputStreamReader(stream);
                      BufferedReader in = new BufferedReader(reader);
@@ -175,7 +176,7 @@ public class MeteoExtractor {
 
                      break;
                  } catch (IOException e) {
-                     System.out.println("\u001B[31mERRORE 503, max chiamate a meteo.it raggiunte: Cambiare indirizzo ip e premere INVIO per riprovare\u001B[0m");
+                     System.out.println("ERRORE 503, max chiamate a meteo.it raggiunte: Cambiare indirizzo ip e premere INVIO per riprovare");
                      System.in.read();
                      if (++count == maxTries) throw e;
                  }
