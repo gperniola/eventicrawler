@@ -165,71 +165,93 @@ public class MeteoExtractor {
 			 String html ="";
 		        while ((inputLine = in.readLine()) != null) 
 		        	html=html+" "+inputLine;
+
+
+		      //Inizializzazione variabili
+
+             int tempMedia = 0;
+             int ventoMedio = 0;
+             String fenomeni = "";
+             int sereno = 0;
+             int coperto = 0;
+             int poco_nuv = 0;
+             int pioggia = 0;
+             int temporale = 0;
+             int nebbia = 0;
+             int neve = 0;
+             int primavera = 0;
+             int estate = 0;
+             int autunno = 0;
+             int inverno = 0;
+
+             int datiPresenti = 1;
+
 		        
-		     Document doc = Jsoup.parse(html);   
-	       
-		     int tempMedia = Integer.parseInt(doc.select("#mainc > div > table:nth-of-type(2) > tbody > tr:nth-of-type(2) > td:nth-of-type(2)").html().replace(" °C", ""));
-		     int ventoMedio = Integer.parseInt(doc.select("#mainc > div > table:nth-child(7) > tbody > tr:nth-child(10) > td:nth-child(2)").html().replace(" km/h", ""));
-		     String fenomeni = doc.select("#mainc > div > table:nth-child(7) > tbody > tr:nth-child(16) > td:nth-child(2)").text();
-		     int sereno = 0;
-		     int coperto = 0;
-		     int poco_nuv = 0;
-		     int pioggia = 0;
-		     int temporale = 0;
-		     int nebbia = 0;
-		     int neve = 0;
-		     
-		     if(fenomeni.contains("Pioggia")) {
-		    	 pioggia = 1;
-		     }
-		     if(fenomeni.contains("Neve")) {
-		    	 neve = 1;
-		     }
-		     if(fenomeni.contains("Temporale")) {
-		    	 pioggia = 1;
-		     }
-		     if(fenomeni.contains("Nebbia")) {
-		    	 pioggia = 1;
-		     }
-		     
-		     String cond = doc.select("#mainc > div > table:nth-child(7) > tbody > tr:nth-child(17) > td:nth-child(2)").text();
-		     if(cond.contains("sereno")) {
-		    	 sereno = 1;
-		     }
-		     if(cond.contains("nuvoloso")) {
-		    	 poco_nuv = 1;
-		     }
-		     if(cond.contains("coperto")) {
-		    	 coperto = 1;
-		     }
-		     
-		     int primavera = 0;
-		     int estate = 0;
-		     int autunno = 0;
-		     int inverno = 0;
-			 
-			 String seasons[] = {
-					    "Winter", "Winter",
-					    "Spring", "Spring", "Spring",
-					    "Summer", "Summer", "Summer",
-					    "Fall", "Fall", "Fall",
-					    "Winter"
-			};
-			String stagione =  seasons[ dataevento.getMonth() ];
-			
-			if(stagione.equals("Winter")) {
-				inverno = 1;
-			}
-			if(stagione.equals("Spring")) {
-				primavera = 1;
-			}
-			if(stagione.equals("Summer")) {
-				estate = 1;
-			}
-			if(stagione.equals("Fall")) {
-				autunno = 1;
-			}
-		     
+		     Document doc = Jsoup.parse(html);
+
+		     //Controllo se sono presenti i dati in archivio meteo
+
+             String archivio = doc.select("#mainc > div > div:nth-of-type(3) > b").html();
+             if(archivio.contains("Non sono presenti dati storici")) {
+                 System.out.println("Dati meteo storici non presenti per " + comune + " in data " + dataevento + ": " + linkMeteo);
+                 datiPresenti = 0;
+             }
+             else {
+                 //System.out.println("Dati presenti");
+
+                 tempMedia = Integer.parseInt(doc.select("#mainc > div > table:nth-of-type(2) > tbody > tr:nth-of-type(2) > td:nth-of-type(2)").html().replace(" °C", ""));
+                 ventoMedio = Integer.parseInt(doc.select("#mainc > div > table:nth-child(7) > tbody > tr:nth-child(10) > td:nth-child(2)").html().replace(" km/h", ""));
+                 fenomeni = doc.select("#mainc > div > table:nth-child(7) > tbody > tr:nth-child(16) > td:nth-child(2)").text();
+
+
+                 if (fenomeni.contains("Pioggia")) {
+                     pioggia = 1;
+                 }
+                 if (fenomeni.contains("Neve")) {
+                     neve = 1;
+                 }
+                 if (fenomeni.contains("Temporale")) {
+                     pioggia = 1;
+                 }
+                 if (fenomeni.contains("Nebbia")) {
+                     pioggia = 1;
+                 }
+
+                 String cond = doc.select("#mainc > div > table:nth-child(7) > tbody > tr:nth-child(17) > td:nth-child(2)").text();
+                 if (cond.contains("sereno")) {
+                     sereno = 1;
+                 }
+                 if (cond.contains("nuvoloso")) {
+                     poco_nuv = 1;
+                 }
+                 if (cond.contains("coperto")) {
+                     coperto = 1;
+                 }
+
+                 String seasons[] = {
+                         "Winter", "Winter",
+                         "Spring", "Spring", "Spring",
+                         "Summer", "Summer", "Summer",
+                         "Fall", "Fall", "Fall",
+                         "Winter"
+                 };
+                 String stagione = seasons[dataevento.getMonth()];
+
+                 if (stagione.equals("Winter")) {
+                     inverno = 1;
+                 }
+                 if (stagione.equals("Spring")) {
+                     primavera = 1;
+                 }
+                 if (stagione.equals("Summer")) {
+                     estate = 1;
+                 }
+                 if (stagione.equals("Fall")) {
+                     autunno = 1;
+                 }
+             }
+
+
 			//Inserisci nel db
 	    	 String check = "SELECT * from meteo_comuni where idcomune = ? AND data = ?";
 	    	 PreparedStatement st1 = connDb.prepareStatement(check);
@@ -239,7 +261,7 @@ public class MeteoExtractor {
 	    	
 	    	 if(!rs.next()){
 			
-	    		 String q = "INSERT INTO meteo_comuni(idcomune,comune,data,primavera,estate,autunno,inverno,sereno,coperto,poco_nuvoloso,pioggia,temporale,nebbia,neve,temperatura,velocita_vento) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+	    		 String q = "INSERT INTO meteo_comuni(idcomune,comune,data,primavera,estate,autunno,inverno,sereno,coperto,poco_nuvoloso,pioggia,temporale,nebbia,neve,temperatura,velocita_vento, dati_presenti) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 	    		 PreparedStatement st2 = connDb.prepareStatement(q);
 		    	 st2.setString(1, idComune);
                  st2.setString(2, comune);
@@ -257,11 +279,12 @@ public class MeteoExtractor {
 		    	 st2.setInt(14, neve);
 		    	 st2.setInt(15, tempMedia);
 		    	 st2.setInt(16, ventoMedio);
+                 st2.setInt(17, datiPresenti);
 		    	 st2.execute();
 	    	 }
 			
 	     
-		 }catch(NumberFormatException e){error = true; System.out.println("NumberFormatException: Skipping weather for " + comune + "(" + idComune + ") on " + dataevento + " ...");}
+		 }catch(NumberFormatException e) { error = true; System.out.println("NumberFormatException: Skipping weather for " + comune + "(" + idComune + ") on " + dataevento + " ..."); }
 		 catch(Exception e) {error = true; e.printStackTrace();}
 	}
 
