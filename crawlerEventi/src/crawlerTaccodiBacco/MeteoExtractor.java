@@ -158,14 +158,28 @@ public class MeteoExtractor {
 			 conn.setConnectTimeout(3000);
 	
 			 conn.connect();
-			 InputStream stream = conn.getInputStream();
-			 InputStreamReader reader = new InputStreamReader(stream);
-			 BufferedReader in = new BufferedReader(reader);
-			 String inputLine;
-			 String html ="";
-		        while ((inputLine = in.readLine()) != null) 
-		        	html=html+" "+inputLine;
 
+             String inputLine;
+             String html ="";
+
+             //Controllo che non abbia raggiunto il limite max di chiamate a meteo.it, se succede, attendo il riavvio del router e premo invio per riprovare
+             int count = 0;
+             int maxTries = 5;
+             while(true) {
+                 try {
+                     InputStream stream = conn.getInputStream();
+                     InputStreamReader reader = new InputStreamReader(stream);
+                     BufferedReader in = new BufferedReader(reader);
+                     while ((inputLine = in.readLine()) != null)
+                         html=html+" "+inputLine;
+
+                     break;
+                 } catch (IOException e) {
+                     System.out.println("\u001B[31mERRORE 503, max chiamate a meteo.it raggiunte: Cambiare indirizzo ip e premere INVIO per riprovare\u001B[0m");
+                     System.in.read();
+                     if (++count == maxTries) throw e;
+                 }
+             }
 
 		      //Inizializzazione variabili
 
