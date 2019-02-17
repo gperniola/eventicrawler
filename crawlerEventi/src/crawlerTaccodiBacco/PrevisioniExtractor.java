@@ -47,17 +47,32 @@ public class PrevisioniExtractor {
 			cnfe.printStackTrace();
 		}
 		LocalDateTime date = LocalDateTime.now();
+
+
+        Calendar endForecast = Calendar.getInstance();
+        endForecast.add(Calendar.DATE, 6);
+        Date endDate = endForecast.getTime();
+
+
+
 		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd", Locale.ENGLISH);
-		String query = "SELECT * from eventi WHERE data_a >= '" + formatter.format(date)
-				+ "' AND  data_da <= '" + formatter.format(date) + "' ";
+
+        System.out.println("PrevisioniExtractor.java: today: " + formatter.format(date) + " - plus 7 days: " + endDate);
+
+		//String query = "SELECT * from eventi WHERE data_a >= '" + formatter.format(date)
+		//		+ "' AND  data_da <= '" + formatter.format(date) + "' ";
+        String query = "SELECT * from eventi WHERE data_a >= '" + formatter.format(date)
+                + "' AND  data_da <= '" + endDate + "' ";
 		//System.out.println(query);
 		Statement st0 = connDb.createStatement();
 		ResultSet rs0 = st0.executeQuery(query);
 
 
 		//DEBUG_CODE -------------------------
-		String queryCount = "SELECT COUNT(*) from eventi where data_a >= '" + formatter.format(date)
-				+ "' AND  data_da <= '" + formatter.format(date) + "' ";
+		//String queryCount = "SELECT COUNT(*) from eventi where data_a >= '" + formatter.format(date)
+		//		+ "' AND  data_da <= '" + formatter.format(date) + "' ";
+        String queryCount = "SELECT COUNT(*) from eventi where data_a >= '" + formatter.format(date)
+        		+ "' AND  data_da <= '" + endDate  + "' ";
 		Statement stCount = connDb.createStatement();
 		ResultSet rsCount = stCount.executeQuery(queryCount);
 		rsCount.next();
@@ -97,7 +112,7 @@ public class PrevisioniExtractor {
 			//--------------
 
 			ArrayList<Date> dateev = new ArrayList();
-			String linkMeteo = "https://www.tempoitalia.it/meteo/" + comune.replace(" ", "-").replace("'", "-");
+			String linkMeteo = "https://www.tempoitalia.it/meteo/" + comune.replace(" ", "-").replace("'", "-").replace("ò","o");
 
 			Calendar start7p = start;
 			start7p.add(Calendar.DATE,6);
