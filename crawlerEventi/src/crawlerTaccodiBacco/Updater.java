@@ -44,11 +44,12 @@ public class Updater {
 		Core.eventsTow2v();
 		MeteoExtractor.extractPastMeteoData();//<- Sistemare i duplicati e cercare una nuova fonte. ???
 		PrevisioniExtractor.extract7days();
-		//Converter.eventiTovec();
+
+        System.out.println("Updater.java: processing Converter.eventiTovec() ...");
+		Converter.eventiTovec();
 
         //DEBUG_CODE
         System.out.println("Updater.java: w2v done");
-
 
 
 		//Save new update date to DB
