@@ -1,0 +1,11 @@
+{
+  "database": "PugliaEventi2",
+  "user": "postgres",
+  "password": "postgres",
+  "link": true,
+  "event": true,
+  "w2v":false,
+  "weather": false,
+  "previsioni":false,
+  "converter":false
+}
