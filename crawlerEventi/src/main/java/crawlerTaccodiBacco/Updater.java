@@ -54,8 +54,8 @@ public class Updater {
 		activateConverter = object.getBoolean("converter");
 
 		/*** OVERRIDE PARAMETRI ***/
-        activateLinkExtractor = false;
-        activateEventExtractor = false;
+        //activateLinkExtractor = false;
+        //activateEventExtractor = false;
         //activatew2v = false;
         //activateWeatherExtractor = true;
         //activatePrevisioniExtractor = true;
