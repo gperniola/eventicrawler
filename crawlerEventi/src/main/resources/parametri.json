@@ -5,7 +5,7 @@
   "link": true,
   "event": true,
   "w2v":false,
-  "weather": false,
-  "previsioni":false,
+  "weather": true,
+  "previsioni":true,
   "converter":false
 }

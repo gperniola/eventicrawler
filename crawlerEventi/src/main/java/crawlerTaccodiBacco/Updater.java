@@ -29,6 +29,8 @@ public class Updater {
 	public static Boolean activatePrevisioniExtractor = true;
 	public static Boolean activateConverter = false;
 
+	public enum status{DISATTIVATO, ATTIVATO};
+
 	public static void main (String args[]) throws Exception {
 		Connection connDb = null;
 
@@ -51,11 +53,20 @@ public class Updater {
 		activatePrevisioniExtractor = object.getBoolean("previsioni");
 		activateConverter = object.getBoolean("converter");
 
+		/*** OVERRIDE PARAMETRI ***/
+        activateLinkExtractor = false;
+        activateEventExtractor = false;
+        //activatew2v = false;
+        //activateWeatherExtractor = true;
+        //activatePrevisioniExtractor = true;
+        //activateConverter = false;
+        /*** ----------------- ***/
+
 		System.out.println("------------------------------------------------------------------------------[ PARAMETRI ]");
 		System.out.println("DATABASE: " + object.getString("database") + " | " + "USER: " + DB_User + " | " + "PASSWORD: " + DB_Password);
 		System.out.println("CONN URL: " + connURL);
-		System.out.println("\n [1] LinkExtractor: " + activateLinkExtractor + "\n [2] EventExtractor: " + activateEventExtractor + "\n [3] w2v: " + activatew2v);
-		System.out.println(" [4] WeatherExtractor: " + activateWeatherExtractor + "\n [5] PrevisioniExtractor: " + activatePrevisioniExtractor  + "\n [6] Converter: " + activateConverter);
+		System.out.println("\n [1] LinkExtractor: " + status.values()[(activateLinkExtractor?1:0)] + "\n [2] EventExtractor: " + status.values()[(activateEventExtractor?1:0)] + "\n [3] w2v: " + status.values()[(activatew2v?1:0)]);
+		System.out.println(" [4] MeteoExtractor: " + status.values()[(activateWeatherExtractor?1:0)] + "\n [5] PrevisioniExtractor: " + status.values()[(activatePrevisioniExtractor?1:0)]  + "\n [6] Converter: " + status.values()[(activateConverter?1:0)]);
 
 
 		try
@@ -85,12 +96,12 @@ public class Updater {
 			LinkExtractor.updateLinks(last_up);
 		else System.out.println("Skipping LinkExtractor ...");
 
-		System.out.println("------------------------------------------------------------------------------[ EventExtractor ]");
+		System.out.println("\n------------------------------------------------------------------------------[ EventExtractor ]");
 		if(activateEventExtractor)
 			EventExtractor.eventExtract();
 		else System.out.println("Skipping EventExtractor ...");
 
-		System.out.println("------------------------------------------------------------------------------[ W2V ]");
+		System.out.println("\n------------------------------------------------------------------------------[ W2V ]");
 		if(activatew2v) {
 			//DEBUG_CODE
 			System.out.println("Processing w2v ...");
@@ -98,17 +109,17 @@ public class Updater {
 		}
 		else System.out.println("Skipping w2v processing ...");
 
-		System.out.println("------------------------------------------------------------------------------[ MeteoExtractor ]");
+		System.out.println("\n------------------------------------------------------------------------------[ MeteoExtractor ]");
 		if(activateWeatherExtractor)
 			MeteoExtractor.extractPastMeteoData();
 		else System.out.println("Skipping MeteoExtractor ...");
 
-		System.out.println("------------------------------------------------------------------------------[ PrevisioniExtractor ]");
+		System.out.println("\n------------------------------------------------------------------------------[ PrevisioniExtractor ]");
 		if(activatePrevisioniExtractor)
 			PrevisioniExtractor.extract7days();
 		else System.out.println("Skipping PrevisioniExtractor ...");
 
-		System.out.println("------------------------------------------------------------------------------[ Converter ]");
+		System.out.println("\n------------------------------------------------------------------------------[ Converter ]");
         if(activateConverter) {
 			System.out.println("Converter.eventiTovec() ...");
 			Converter.eventiTovec();
