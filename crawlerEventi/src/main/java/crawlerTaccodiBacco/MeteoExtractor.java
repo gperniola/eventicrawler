@@ -107,7 +107,13 @@ public class MeteoExtractor {
 				int idMeteo = checkMeteoDb(idComune, dat, connDb);
 				if (idMeteo == -1){
 					String linkMeteo = "https://www.ilmeteo.it/portale/archivio-meteo/" + URLEncoder.encode(comune) + "/" + (dat.getYear() + 1900) + "/" + nomeMese + "/" + dat.getDate();
-					getMeteoData(linkMeteo,idComune, comune, dat, connDb);
+					int status = getMeteoData(linkMeteo,idComune, comune, dat, connDb);
+					if (status == -1){
+                        System.out.println("Eventi processati: " + eventsProcessed + " ...");
+                        System.out.println("Numero di chiamate api effettuate: " + callsCount + " ...");
+					    System.out.println("Impossibile contattare meteo.it, interrompo MeteoExtractor ...");
+					    return;
+                    }
 					idMeteo = checkMeteoDb(idComune, dat, connDb);
 					callsCount++;
 					Thread.sleep(1000);
@@ -149,7 +155,7 @@ public class MeteoExtractor {
 	}
 	
 	//public static void getMeteoData(String linkMeteo, String linkEvento, String titolo, Date dataevento, Connection connDb) throws Exception  {
-    public static void getMeteoData(String linkMeteo,String idComune, String comune, Date dataevento, Connection connDb) throws Exception  {
+    public static int getMeteoData(String linkMeteo,String idComune, String comune, Date dataevento, Connection connDb) throws Exception  {
 		 try {
 
 
@@ -157,7 +163,7 @@ public class MeteoExtractor {
              String html ="";
 
              //Controllo che non abbia raggiunto il limite max di chiamate a meteo.it, se succede, attendo il riavvio del router e premo invio per riprovare
-             int count = 0;
+             int count = 1;
              int maxTries = 5;
              while(true) {
                  try {
@@ -179,9 +185,12 @@ public class MeteoExtractor {
 
                      break;
                  } catch (IOException e) {
-                     System.out.println("ERRORE 503, max chiamate a meteo.it raggiunte: Cambiare indirizzo ip e premere INVIO per riprovare");
-                     System.in.read();
-                     if (++count == maxTries) throw e;
+                     Thread.sleep(3000);
+                     System.out.println("[ ERRORE 503 ] Max chiamate a meteo.it raggiunte: tentativo " + count + " di 5 ...");
+                     //System.in.read();
+                     //if (count++ == maxTries) throw e;
+                     if (count++ == maxTries) return -1;
+                     //return;
                  }
              }
 
@@ -304,6 +313,8 @@ public class MeteoExtractor {
 	     
 		 }catch(NumberFormatException e) { error = true; System.out.println("NumberFormatException: Skipping weather for " + comune + "(" + idComune + ") on " + dataevento + " ..."); }
 		 catch(Exception e) {error = true; e.printStackTrace();}
+
+		 return 1;
 	}
 
 
