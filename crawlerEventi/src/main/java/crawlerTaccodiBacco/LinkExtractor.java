@@ -146,9 +146,11 @@ public class LinkExtractor {
 			
 		
 		LocalDateTime ldt = LocalDateTime.now();
-		ldt = (new java.util.Date(last_up.getTime()).toInstant()).atZone(ZoneId.of("Europe/Rome")).toLocalDateTime();
+		//ldt = (new java.util.Date(last_up.getTime()).toInstant()).atZone(ZoneId.of("Europe/Rome")).toLocalDateTime();
+        LocalDateTime pdt = (new java.util.Date(last_up.getTime()).toInstant()).atZone(ZoneId.of("Europe/Rome")).toLocalDateTime();
 		DateTimeFormatter formmat1 = DateTimeFormatter.ofPattern("yyyy-MM-dd", Locale.ENGLISH);
-		String startDat = formmat1.format(ldt.minusDays(7));
+		//String startDat = formmat1.format(ldt.minusDays(7));
+        String startDat = formmat1.format(pdt.minusDays(7));
 		
 		String endDat = formmat1.format(ldt.plusMonths(6));
 
