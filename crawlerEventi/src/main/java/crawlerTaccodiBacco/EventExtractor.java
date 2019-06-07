@@ -38,7 +38,8 @@ public class EventExtractor {
 	    {
 	    	Class.forName("org.postgresql.Driver");
 			if (connDb == null) {
-				connDb = DriverManager.getConnection(Updater.connURL, "postgres", "postgres");
+				//connDb = DriverManager.getConnection(Updater.connURL, "perniola", "perniola12319");
+                connDb = DriverManager.getConnection(Updater.connURL, Updater.DB_User, Updater.DB_Password);
 			}  
 	    }
 	    catch(ClassNotFoundException cnfe)
@@ -57,7 +58,7 @@ public class EventExtractor {
         Statement stCount = connDb.createStatement();
         ResultSet rsCount = stCount.executeQuery(queryCount);
         rsCount.next();
-        System.out.println("EventExtractor.java: extracting " + rsCount.getString(1) +" links ...");
+        System.out.println("Estraggo " + rsCount.getString(1) +" links ...");
         int newExtractedEvents = 0;
         int oldExtractedEvents = 0;
         int failedExtractedEvents = 0;
@@ -375,7 +376,7 @@ public class EventExtractor {
 		    //DEBUG_CODE
             totalExtractedEvents++;
 		    if((totalExtractedEvents % 250) == 0) {
-                System.out.println("Processed events: " + totalExtractedEvents + " ...");
+                System.out.println("Eventi processati: " + totalExtractedEvents + " ...");
             }
 
 
@@ -383,10 +384,10 @@ public class EventExtractor {
 
 		//DEBUG_CODE--------------------
         oldExtractedEvents = oldExtractedEvents - newExtractedEvents;
-        System.out.println("TOTAL New events extracted: " + newExtractedEvents);
-        System.out.println("TOTAL Events already extracted: " + oldExtractedEvents);
-        System.out.println("TOTAL Failed to extract Events: " + failedExtractedEvents);
-        System.out.println("TOTAL LINKS PROCESSED: " + totalExtractedEvents);
+        System.out.println("Nuovi eventi estratti: " + newExtractedEvents);
+        System.out.println("Eventi gia estratti: " + oldExtractedEvents);
+        System.out.println("Eventi non estratti: " + failedExtractedEvents);
+        System.out.println("Links totali processati: " + totalExtractedEvents);
         //-----------------------------
 
 		connDb.close();

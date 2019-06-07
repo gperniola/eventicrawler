@@ -43,7 +43,8 @@ public class PrevisioniExtractor {
 		try {
 			Class.forName("org.postgresql.Driver");
 			if (connDb == null) {
-				connDb = DriverManager.getConnection(Updater.connURL,"postgres", "postgres");
+				//connDb = DriverManager.getConnection(Updater.connURL,"perniola", "perniola12319");
+				connDb = DriverManager.getConnection(Updater.connURL, Updater.DB_User, Updater.DB_Password);
 			}
 		} catch (ClassNotFoundException cnfe) {
 			System.out.println("Error loading class!");
@@ -60,7 +61,7 @@ public class PrevisioniExtractor {
 
 		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd", Locale.ENGLISH);
 
-        System.out.println("PrevisioniExtractor.java: today: " + formatter.format(date) + " - plus 7 days: " + endDate);
+        System.out.println("Da oggi: " + formatter.format(date) + " + 7 giorni: " + endDate);
 
 		//String query = "SELECT * from eventi WHERE data_a >= '" + formatter.format(date)
 		//		+ "' AND  data_da <= '" + formatter.format(date) + "' ";
@@ -79,7 +80,7 @@ public class PrevisioniExtractor {
 		Statement stCount = connDb.createStatement();
 		ResultSet rsCount = stCount.executeQuery(queryCount);
 		rsCount.next();
-		System.out.println("PrevisioniExtractor.java: extracting weather predictions for " + rsCount.getString(1) +" events ...");
+		System.out.println("Estraggo previsioni meteo future per " + rsCount.getString(1) +" eventi ...");
 		int callsCount = 0;
 		int eventsProcessed = 0;
 		int errorsFound = 0;
@@ -166,8 +167,8 @@ public class PrevisioniExtractor {
 			//DEBUG_CODE
 			eventsProcessed++;
 			if((eventsProcessed % 100) == 0) {
-				System.out.println("Processed events: " + eventsProcessed + " ...");
-				System.out.println("Number of weather calls made: " + callsCount + " ...");
+				System.out.println("Eventi processati: " + eventsProcessed + " ...");
+				System.out.println("Numero di chiamate api effettuate: " + callsCount + " ...");
 			}
 			//-----------------
 			 
@@ -175,10 +176,10 @@ public class PrevisioniExtractor {
 		}
 		connDb.close();
 		//DEBUG_CODE
-		System.out.println("TOTAL number of events processed: " + eventsProcessed);
-		System.out.println("TOTAL number of weather calls: " + callsCount);
-		System.out.println("TOTAL number of weather errors detected: " + errorsFound);
-		System.out.println("TOTAL number of istat code errors detected: " + istatErrorsFound);
+		System.out.println("Eventi totali processati: " + eventsProcessed);
+		System.out.println("Totale di chiamate api effettuate: " + callsCount);
+		System.out.println("Errori totali trovati: " + errorsFound);
+		System.out.println("Totale di codici istat non trovati: " + istatErrorsFound);
 		//---------------------
 	}
 

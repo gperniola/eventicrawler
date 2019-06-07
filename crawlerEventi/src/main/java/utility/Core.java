@@ -9,6 +9,7 @@ import java.sql.Statement;
 import java.util.List;
 import java.util.Vector;
 
+import crawlerTaccodiBacco.Updater;
 import org.jsoup.Jsoup;
 
 public class Core {
@@ -19,8 +20,9 @@ public class Core {
 		try {
 			Class.forName("org.postgresql.Driver");
 			if (con0 == null) {
-				con0 = DriverManager.getConnection("jdbc:postgresql://127.0.0.1/PugliaEventi?characterEncoding=utf8",
-						"postgres", "postgres");
+				//con0 = DriverManager.getConnection("jdbc:postgresql://127.0.0.1/PugliaEventi?characterEncoding=utf8",
+				//		"postgres", "postgres");
+				con0 = DriverManager.getConnection(Updater.connURL, Updater.DB_User, Updater.DB_Password);
 			}
 		} catch (ClassNotFoundException cnfe) {
 			System.out.println("Error loading class!");

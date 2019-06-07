@@ -43,7 +43,8 @@ public class LinkExtractor {
 	    {
 	    	Class.forName("org.postgresql.Driver");
 			if (connDb == null) {
-				connDb = DriverManager.getConnection(Updater.connURL, "postgres", "postgres");
+				connDb = DriverManager.getConnection(Updater.connURL, Updater.DB_User, Updater.DB_Password);
+				//connDb = DriverManager.getConnection(Updater.connURL, "perniola", "perniola12319");
 			}  
 	    }
 	    catch(ClassNotFoundException cnfe)
@@ -67,7 +68,6 @@ public class LinkExtractor {
 		
 		
 			 String link = "https://iltaccodibacco.it/puglia/eventi/"+formatter.format(date)+"//";
-
 
 			 URL url = new URL(link);
 			 URLConnection conn = url.openConnection();
@@ -100,6 +100,11 @@ public class LinkExtractor {
 			    	 st1.setString(3, titolo);
 			    	 ResultSet rs = st1.executeQuery();
 
+                     //System.out.println("Data: " + new java.sql.Date(date.getTime()).toString());
+                     //System.out.println("linkPage: " + linkPage);
+                     //System.out.println("titolo: " + titolo);
+                     //System.out.println(st1.toString());
+
                      //DEBUG_CODE
                      oldLinks++;
 
@@ -115,7 +120,11 @@ public class LinkExtractor {
                          newLinks++;
 
 			    	 }
-
+			    	 else{
+                         //System.out.println("found!");
+                         //System.out.println(rs.getString("id_l") + " --- " +  rs.getString("data_ev"));
+                     }
+                     //System.out.println("---------------------");
                      //DEBUG_CODE
                      totalLinks++;
 		    	 }
@@ -125,9 +134,9 @@ public class LinkExtractor {
 
 		//DEBUG_CODE
         oldLinks = oldLinks - newLinks;
-        System.out.println("New links inserted: " + newLinks);
-        System.out.println("Links already in db: " + oldLinks);
-        System.out.println("TOTAL links found: " + totalLinks);
+		System.out.println("Links totali trovati: " + totalLinks);
+		System.out.println("Links già presenti in db: " + oldLinks);
+        System.out.println("Nuovi links inseriti in db: " + newLinks);
 
 		connDb.close();
 	}
@@ -145,7 +154,7 @@ public class LinkExtractor {
 
 
 		//DEBUG_CODE
-		System.out.println("LinkExtractor.java: finding event from " + startDat + " to " + endDat + " ...");
+		System.out.println("TROVO EVENTI DA: " + startDat + " A: " + endDat + " ...");
 		
 		try {
 			getLinks(startDat, endDat);

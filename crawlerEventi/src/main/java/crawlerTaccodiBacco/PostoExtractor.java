@@ -37,7 +37,8 @@ public class PostoExtractor {
 	    {
 	    	Class.forName("org.postgresql.Driver");
 			if (connDb == null) {
-				connDb = DriverManager.getConnection(Updater.connURL, "postgres", "postgres");
+				//connDb = DriverManager.getConnection(Updater.connURL, "perniola", "perniola12319");
+				connDb = DriverManager.getConnection(Updater.connURL, Updater.DB_User, Updater.DB_Password);
 			}  
 	    }
 	    catch(ClassNotFoundException cnfe)

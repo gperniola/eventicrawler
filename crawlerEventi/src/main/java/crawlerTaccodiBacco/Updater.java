@@ -7,22 +7,63 @@ import java.sql.ResultSet;
 import java.sql.Statement;
 import java.time.LocalDateTime;
 import java.util.Date;
+import java.io.InputStream;
+
+import org.json.*;
 
 import utility.Converter;
 import utility.Core;
 
 public class Updater {
 
-    public static String connURL = "jdbc:postgresql://127.0.0.1/PugliaEventi?characterEncoding=utf8";
+    public static String connURL = "jdbc:postgresql://127.0.0.1/PugliaEventi2?characterEncoding=utf8";
+    //public static String connURL = "jdbc:postgresql://127.0.0.1/PugliaEventi?characterEncoding=utf8";
 	//public static String connURL = "jdbc:postgresql://postgres/PugliaEventi?characterEncoding=utf8";
+
+	public static String DB_User = "postgres";
+	public static String DB_Password = "postgres";
+	public static Boolean activateLinkExtractor = true;
+	public static Boolean activateEventExtractor = true;
+	public static Boolean activatew2v = false;
+	public static Boolean activateWeatherExtractor = true;
+	public static Boolean activatePrevisioniExtractor = true;
+	public static Boolean activateConverter = false;
 
 	public static void main (String args[]) throws Exception {
 		Connection connDb = null;
+
+		String resourceName = "/parametri.json";
+		InputStream is = Updater.class.getResourceAsStream(resourceName);
+		if (is == null) {
+			throw new NullPointerException("Cannot find resource file " + resourceName);
+		}
+
+		JSONTokener tokener = new JSONTokener(is);
+		JSONObject object = new JSONObject(tokener);
+
+		connURL = "jdbc:postgresql://127.0.0.1/"+object.getString("database")+"?characterEncoding=utf8";
+		DB_User = object.getString("user");
+		DB_Password = object.getString("password");
+		activateLinkExtractor = object.getBoolean("link");
+		activateEventExtractor = object.getBoolean("event");
+		activatew2v = object.getBoolean("w2v");
+		activateWeatherExtractor = object.getBoolean("weather");
+		activatePrevisioniExtractor = object.getBoolean("previsioni");
+		activateConverter = object.getBoolean("converter");
+
+		System.out.println("------------------------------------------------------------------------------[ PARAMETRI ]");
+		System.out.println("DATABASE: " + object.getString("database") + " | " + "USER: " + DB_User + " | " + "PASSWORD: " + DB_Password);
+		System.out.println("CONN URL: " + connURL);
+		System.out.println("\n [1] LinkExtractor: " + activateLinkExtractor + "\n [2] EventExtractor: " + activateEventExtractor + "\n [3] w2v: " + activatew2v);
+		System.out.println(" [4] WeatherExtractor: " + activateWeatherExtractor + "\n [5] PrevisioniExtractor: " + activatePrevisioniExtractor  + "\n [6] Converter: " + activateConverter);
+
+
 		try
 	    {
 	    	Class.forName("org.postgresql.Driver");
 			if (connDb == null) {
-				connDb = DriverManager.getConnection(Updater.connURL, "postgres", "postgres");
+				connDb = DriverManager.getConnection(Updater.connURL, Updater.DB_User, Updater.DB_Password);
+				//connDb = DriverManager.getConnection(Updater.connURL, "perniola", "perniola12319");
 			}  
 	    }
 	    catch(ClassNotFoundException cnfe)
@@ -37,23 +78,42 @@ public class Updater {
 		Date last_up = rs0.getDate("last_update");
 
 		//DEBUG_CODE
-		System.out.println("Updater.java: last update found: " + last_up.toString());
+		System.out.println("\nULTIMO AGGIORNAMENTO DATABASE: " + last_up.toString() + "\n");
 
-		LinkExtractor.updateLinks(last_up);
-		EventExtractor.eventExtract();
+		System.out.println("------------------------------------------------------------------------------[ LinksExtractor ]");
+		if(activateLinkExtractor)
+			LinkExtractor.updateLinks(last_up);
+		else System.out.println("Skipping LinkExtractor ...");
 
-        //DEBUG_CODE
-        System.out.println("Updater.java: processing w2v ...");
+		System.out.println("------------------------------------------------------------------------------[ EventExtractor ]");
+		if(activateEventExtractor)
+			EventExtractor.eventExtract();
+		else System.out.println("Skipping EventExtractor ...");
 
-		//Core.eventsTow2v();
-		MeteoExtractor.extractPastMeteoData();//<- Sistemare i duplicati e cercare una nuova fonte. ???
-		PrevisioniExtractor.extract7days();
+		System.out.println("------------------------------------------------------------------------------[ W2V ]");
+		if(activatew2v) {
+			//DEBUG_CODE
+			System.out.println("Processing w2v ...");
+			Core.eventsTow2v();
+		}
+		else System.out.println("Skipping w2v processing ...");
 
-        System.out.println("Updater.java: processing Converter.eventiTovec() ...");
-		//Converter.eventiTovec();
+		System.out.println("------------------------------------------------------------------------------[ MeteoExtractor ]");
+		if(activateWeatherExtractor)
+			MeteoExtractor.extractPastMeteoData();
+		else System.out.println("Skipping MeteoExtractor ...");
 
-        //DEBUG_CODE
-        System.out.println("Updater.java: w2v done");
+		System.out.println("------------------------------------------------------------------------------[ PrevisioniExtractor ]");
+		if(activatePrevisioniExtractor)
+			PrevisioniExtractor.extract7days();
+		else System.out.println("Skipping PrevisioniExtractor ...");
+
+		System.out.println("------------------------------------------------------------------------------[ Converter ]");
+        if(activateConverter) {
+			System.out.println("Converter.eventiTovec() ...");
+			Converter.eventiTovec();
+		}
+		else System.out.println("Skipping w2v converter ...");
 
 
 		//Save new update date to DB
@@ -65,7 +125,8 @@ public class Updater {
 		connDb.close();
 
         //DEBUG_CODE
-        System.out.println("Updater.java: db saved and closed");
+		System.out.println("------------------------------------------------------------------------------[ Updater ]");
+        System.out.println("DATABASE SALVATO E CHIUSO.");
 		
 	}
 }

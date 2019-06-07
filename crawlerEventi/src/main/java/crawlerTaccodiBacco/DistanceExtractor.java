@@ -40,7 +40,8 @@ public class DistanceExtractor {
 	    {
 	    	Class.forName("org.postgresql.Driver");
 			if (connDb == null) {
-				connDb = DriverManager.getConnection("jdbc:postgresql://127.0.0.1/PugliaEventi?characterEncoding=utf8", "postgres", "postgres");
+				//connDb = DriverManager.getConnection("jdbc:postgresql://127.0.0.1/PugliaEventi?characterEncoding=utf8", "postgres", "postgres");
+				connDb = DriverManager.getConnection(Updater.connURL, Updater.DB_User, Updater.DB_Password);
 			}  
 	    }
 	    catch(ClassNotFoundException cnfe)

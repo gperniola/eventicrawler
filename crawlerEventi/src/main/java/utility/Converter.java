@@ -1,5 +1,7 @@
 package utility;
 
+import crawlerTaccodiBacco.Updater;
+
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -17,8 +19,9 @@ public class Converter {
 		try {
 			Class.forName("org.postgresql.Driver");
 			if (con0 == null) {
-				con0 = DriverManager.getConnection("jdbc:postgresql://127.0.0.1/PugliaEventi?characterEncoding=utf8",
-						"postgres", "postgres");
+				//con0 = DriverManager.getConnection("jdbc:postgresql://127.0.0.1/PugliaEventi?characterEncoding=utf8",
+				//		"postgres", "postgres");
+				con0 = DriverManager.getConnection(Updater.connURL, Updater.DB_User, Updater.DB_Password);
 			}
 		} catch (ClassNotFoundException cnfe) {
 			System.out.println("Error loading class!");
