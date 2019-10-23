@@ -1,5 +1,5 @@
 {
-  "database": "PugliaEventi2",
+  "database": "PugliaEventi",
   "user": "postgres",
   "password": "postgres",
   "link": true,
